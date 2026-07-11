@@ -54,7 +54,7 @@ document.querySelectorAll('.copy-button').forEach(button => {
   });
 });
 
-let selectedMinutes = 55;
+let selectedMinutes = Number(document.querySelector('.mode-button.active')?.dataset.minutes) || 55;
 let remainingSeconds = selectedMinutes * 60;
 let timerId = null;
 
