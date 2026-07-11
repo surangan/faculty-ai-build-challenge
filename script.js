@@ -25,13 +25,25 @@ document.querySelectorAll('.copy-button').forEach(button => {
       await navigator.clipboard.writeText(text);
       copied = true;
     } catch {
+      const writeFromCopyEvent = event => {
+        event.clipboardData.setData('text/plain', text);
+        event.preventDefault();
+      };
+      document.addEventListener('copy', writeFromCopyEvent);
+      copied = document.execCommand('copy');
+      document.removeEventListener('copy', writeFromCopyEvent);
+    }
+
+    if (!copied) {
       const fallback = document.createElement('textarea');
       fallback.value = text;
       fallback.setAttribute('readonly', '');
       fallback.style.position = 'fixed';
       fallback.style.left = '-9999px';
       document.body.appendChild(fallback);
+      fallback.focus();
       fallback.select();
+      fallback.setSelectionRange(0, fallback.value.length);
       copied = document.execCommand('copy');
       fallback.remove();
     }
