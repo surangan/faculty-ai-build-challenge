@@ -1,6 +1,6 @@
 # Faculty AI Build Challenge Website
 
-A self-contained static website for a 90-minute faculty AI hackathon.
+A self-contained static website for the NUS Computing Faculty Retreat Hackathon and its 90-minute Faculty AI Build Challenge.
 
 ## Files
 
