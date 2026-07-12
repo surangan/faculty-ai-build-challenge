@@ -6,13 +6,25 @@ A self-contained static website for the NUS Computing Faculty Retreat Hackathon 
 
 - `index.html` — page content and structure
 - `styles.css` — visual design and responsive layout
-- `event-config.js` — 17 placeholder project rows and optional external data links
-- `projects.csv` — editable project gallery data
+- `event-config.js` — live project data source, fallback settings and optional external data links
+- `projects.csv` — fallback project gallery data
 - `script.js` — timer, filters, copy buttons and project gallery loading
 
 ## Customise before the event
 
-Open `projects.csv` and update the 17 rows when final project details are ready. Each row supports:
+The project gallery loads live submissions from this Google Sheet whenever the page is refreshed:
+
+`https://docs.google.com/spreadsheets/d/1o2BFaUQBgFapPPMOn08PBQrrISIDZhGhlYDQ0uUPr8Q/edit?usp=sharing`
+
+Keep the Sheet shared so anyone with the link can view it. The gallery currently maps these Google Form columns:
+
+- `Choose Your Team`
+- `Project Title:`
+- `One line project description`
+- `Project URL`
+- `Project Image`
+
+If the Google Sheet is unavailable or has no project rows yet, the site falls back to `projects.csv`. Each fallback row supports:
 
 - `Team`
 - `Title`
@@ -20,7 +32,7 @@ Open `projects.csv` and update the 17 rows when final project details are ready.
 - `Image URL`
 - `Description`
 
-The current gallery intentionally uses the same dummy image, placeholder titles and dummy text. If a row has no image, the site uses the default placeholder image configured in `event-config.js`.
+The fallback gallery intentionally uses the same dummy image, placeholder titles and placeholder description. If a row has no image, the site uses the default placeholder image configured in `event-config.js`.
 
 You may also update:
 

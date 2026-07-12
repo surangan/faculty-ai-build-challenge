@@ -246,13 +246,124 @@ async function fetchCsvRows(url) {
   return csvToObjects(await response.text());
 }
 
+function googleSheetInfo(url) {
+  try {
+    const parsed = new URL(url, window.location.href);
+    const match = parsed.hostname === 'docs.google.com'
+      ? parsed.pathname.match(/\/spreadsheets\/d\/([^/]+)/)
+      : null;
+
+    if (!match) return null;
+
+    return {
+      id: match[1],
+      gid: parsed.searchParams.get('gid') || '0'
+    };
+  } catch {
+    return null;
+  }
+}
+
+function googleSheetJsonpUrl(url, callbackName) {
+  const sheet = googleSheetInfo(url);
+  if (!sheet) return '';
+
+  const endpoint = new URL(`https://docs.google.com/spreadsheets/d/${sheet.id}/gviz/tq`);
+  endpoint.searchParams.set('tqx', `responseHandler:${callbackName}`);
+  endpoint.searchParams.set('gid', sheet.gid);
+  endpoint.searchParams.set('headers', '1');
+  endpoint.searchParams.set('tq', 'select *');
+  endpoint.searchParams.set('_', String(Date.now()));
+  return endpoint.toString();
+}
+
+function sheetCellValue(cell) {
+  if (!cell) return '';
+  if (cell.f !== undefined && cell.f !== null) return String(cell.f).trim();
+  if (cell.v !== undefined && cell.v !== null) return String(cell.v).trim();
+  return '';
+}
+
+function googleSheetResponseToObjects(response) {
+  if (!response || response.status !== 'ok' || !response.table) {
+    throw new Error('Google Sheet response was not usable.');
+  }
+
+  const headers = (response.table.cols || []).map((column, index) =>
+    String(column.label || `Column ${index + 1}`).trim()
+  );
+
+  return (response.table.rows || []).map(row => Object.fromEntries(
+    headers.map((header, index) => [header, sheetCellValue(row.c?.[index])])
+  )).filter(row => Object.values(row).some(value => String(value).trim()));
+}
+
+function fetchGoogleSheetRows(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = `googleSheetCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement('script');
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error('Google Sheet request timed out.'));
+    }, 15000);
+
+    function cleanup() {
+      window.clearTimeout(timeout);
+      script.remove();
+      delete window[callbackName];
+    }
+
+    window[callbackName] = response => {
+      try {
+        const rows = googleSheetResponseToObjects(response);
+        cleanup();
+        resolve(rows);
+      } catch (error) {
+        cleanup();
+        reject(error);
+      }
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('Could not load Google Sheet script.'));
+    };
+
+    script.src = googleSheetJsonpUrl(url, callbackName);
+    document.head.appendChild(script);
+  });
+}
+
+function projectDataSources() {
+  const configuredSources = challengeConfig.projectDataSources || [
+    challengeConfig.projectDataUrl,
+    challengeConfig.projectDataCsvUrl,
+    challengeConfig.projectSheetCsvUrl
+  ];
+
+  return configuredSources.filter(Boolean);
+}
+
+function sourceLabel(url) {
+  return googleSheetInfo(url) ? 'Google Sheet' : 'CSV data source';
+}
+
+async function fetchProjectRows(url) {
+  const sourceUrl = normaliseResourceUrl(url);
+  if (googleSheetInfo(sourceUrl)) {
+    return fetchGoogleSheetRows(sourceUrl);
+  }
+
+  return fetchCsvRows(sourceUrl);
+}
+
 function mapProject(project, index) {
   const row = project || {};
-  const team = pick(row, ['Team', 'Team Name']) || row.team || `Team ${String(index + 1).padStart(2, '0')}`;
+  const team = pick(row, ['Team', 'Team Name', 'Choose Your Team']) || row.team || `Team ${String(index + 1).padStart(2, '0')}`;
   const title = pick(row, ['Project Title', 'Title', 'Project']) || row.title || `${team} prototype`;
   const url = pick(row, ['Project URL', 'Prototype URL', 'URL', 'Link']) || row.url || '';
-  const image = pick(row, ['Image URL', 'Screenshot URL', 'Image', 'Screenshot']) || row.image || challengeConfig.defaultProjectImage || '';
-  const pitch = pick(row, ['Description', 'One-line Description', 'Pitch', 'One-sentence Pitch', 'Summary']) || row.pitch || 'This is a place holder one sentence project description.';
+  const image = pick(row, ['Image URL', 'Project Image', 'Screenshot URL', 'Image', 'Screenshot']) || row.image || challengeConfig.defaultProjectImage || '';
+  const pitch = pick(row, ['Description', 'One line project description', 'One-line Description', 'Pitch', 'One-sentence Pitch', 'Summary']) || row.pitch || 'This is a place holder one sentence project description.';
   const id = slugify(`${team}-${title}`) || `project-${index + 1}`;
 
   return {
@@ -384,7 +495,7 @@ function renderProjects(projects, voteCounts = new Map(), resultsConfigured = fa
 
     const image = document.createElement('img');
     image.src = project.image || placeholderImage(project);
-    image.alt = `${project.title} dummy image`;
+    image.alt = `${project.title} image`;
     image.loading = 'lazy';
     imageBox.appendChild(image);
 
@@ -444,11 +555,11 @@ function renderProjects(projects, voteCounts = new Map(), resultsConfigured = fa
 
 async function loadProjects() {
   const projects = fallbackProjects();
-  const sheetUrl = normaliseResourceUrl(challengeConfig.projectDataCsvUrl || challengeConfig.projectSheetCsvUrl);
+  const sources = projectDataSources();
 
   renderProjects(projects);
 
-  if (!sheetUrl) {
+  if (!sources.length) {
     if (projectSourceStatus) {
       projectSourceStatus.textContent = 'Placeholder gallery: add an external CSV URL in event-config.js to load live submissions.';
     }
@@ -456,23 +567,29 @@ async function loadProjects() {
   }
 
   if (projectSourceStatus) {
-    projectSourceStatus.textContent = 'Loading project gallery from the external CSV data source...';
+    projectSourceStatus.textContent = `Loading project gallery from the ${sourceLabel(sources[0])}...`;
   }
 
-  try {
-    const sheetProjects = (await fetchCsvRows(sheetUrl)).map(mapProject).filter(project => project.team || project.title);
-    if (!sheetProjects.length) throw new Error('The external CSV data source did not contain project rows.');
+  for (const source of sources) {
+    try {
+      const sheetProjects = (await fetchProjectRows(source)).map(mapProject).filter(project => project.team || project.title);
+      if (!sheetProjects.length) throw new Error('The data source did not contain project rows.');
 
-    if (projectSourceStatus) {
-      projectSourceStatus.textContent = `Loaded ${sheetProjects.length} project${sheetProjects.length === 1 ? '' : 's'} from the external CSV data source.`;
+      if (projectSourceStatus) {
+        projectSourceStatus.textContent = `Loaded ${sheetProjects.length} project${sheetProjects.length === 1 ? '' : 's'} from the ${sourceLabel(source)}.`;
+      }
+      return sheetProjects;
+    } catch {
+      if (projectSourceStatus) {
+        projectSourceStatus.textContent = `Could not load the ${sourceLabel(source)}. Trying the next project data source...`;
+      }
     }
-    return sheetProjects;
-  } catch {
-    if (projectSourceStatus) {
-      projectSourceStatus.textContent = 'Could not load the external CSV data source. Showing the 17-team placeholder gallery until the CSV link is updated.';
-    }
-    return projects;
   }
+
+  if (projectSourceStatus) {
+    projectSourceStatus.textContent = 'Could not load any project data source. Showing the 17-team placeholder gallery until the data link is updated.';
+  }
+  return projects;
 }
 
 async function loadVoteCounts(projects) {

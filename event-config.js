@@ -1,6 +1,11 @@
+const placeholderProjectDescription = "This is a place holder one sentence project description.";
+
 window.challengeConfig = {
-  // Update projects by editing or replacing projects.csv.
-  projectDataCsvUrl: "./projects.csv?v=project-showcase-image",
+  // Primary live data source. The gallery reloads this Google Sheet whenever the page is refreshed.
+  projectDataUrl: "https://docs.google.com/spreadsheets/d/1o2BFaUQBgFapPPMOn08PBQrrISIDZhGhlYDQ0uUPr8Q/edit?usp=sharing",
+
+  // Backup data source if the Google Sheet is unavailable or has no project rows.
+  projectDataCsvUrl: "./projects.csv?v=google-sheet-gallery",
   defaultProjectImage: "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
 
   // Optional voting configuration.
@@ -10,125 +15,15 @@ window.challengeConfig = {
   voteResultsCsvUrl: "",
   voteProjectColumn: "Project",
 
-  fallbackProjects: [
-    {
-      team: "Team 01",
-      title: "Project 01 title placeholder",
+  fallbackProjects: Array.from({ length: 17 }, (_, index) => {
+    const teamNumber = String(index + 1).padStart(2, "0");
+
+    return {
+      team: `Team ${teamNumber}`,
+      title: `Project ${teamNumber} title placeholder`,
       url: "",
       image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 02",
-      title: "Project 02 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 03",
-      title: "Project 03 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 04",
-      title: "Project 04 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 05",
-      title: "Project 05 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 06",
-      title: "Project 06 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 07",
-      title: "Project 07 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 08",
-      title: "Project 08 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 09",
-      title: "Project 09 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 10",
-      title: "Project 10 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 11",
-      title: "Project 11 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 12",
-      title: "Project 12 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 13",
-      title: "Project 13 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 14",
-      title: "Project 14 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 15",
-      title: "Project 15 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 16",
-      title: "Project 16 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    },
-    {
-      team: "Team 17",
-      title: "Project 17 title placeholder",
-      url: "",
-      image: "",
-      pitch: "Dummy text."
-    }
-  ]
+      pitch: placeholderProjectDescription
+    };
+  })
 };
