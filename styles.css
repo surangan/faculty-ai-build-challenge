@@ -489,6 +489,17 @@ nav a:hover {
   margin: 0;
 }
 
+.timeline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.timeline-button {
+  box-shadow: none;
+}
+
 .timer-panel,
 .submit-panel {
   display: grid;
