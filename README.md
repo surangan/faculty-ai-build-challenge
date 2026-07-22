@@ -1,70 +1,25 @@
-# Faculty AI Build Challenge Website
+# SprintDeck
 
-A self-contained static website for the NUS Computing Faculty Retreat Hackathon and its 90-minute Faculty AI Build Challenge.
+SprintDeck is a focused build-sprint command center for the NUS Computing Faculty AI Build Challenge. It helps faculty teams turn a broad interest into a realistic 70-minute prototype brief, run the build clock, and see what a finished project gallery could look like.
 
-## Files
+## Main demo
 
-- `index.html` — page content and structure
-- `styles.css` — visual design and responsive layout
-- `event-config.js` — live project data source, fallback settings and optional external data links
-- `projects.csv` — fallback project gallery data
-- `script.js` — timer, filters, copy buttons and project gallery loading
+1. Open the Launchpad.
+2. Choose a problem space and a team strength.
+3. Generate a focused sprint brief.
+4. Copy the brief or start the live 70-minute timer.
 
-## Customise before the event
+All showcase projects are clearly labeled demonstration data. The prototype uses no external API, authentication, or database.
 
-The project gallery loads live submissions from this Google Sheet whenever the page is refreshed:
-
-`https://docs.google.com/spreadsheets/d/1o2BFaUQBgFapPPMOn08PBQrrISIDZhGhlYDQ0uUPr8Q/edit?usp=sharing`
-
-Keep the Sheet shared so anyone with the link can view it. The gallery currently maps these Google Form columns:
-
-- `Choose Your Team`
-- `Project Title:`
-- `One line project description`
-- `Project URL`
-- `Project Image`
-
-`Project Image` can be a direct image URL or a Google Drive share link. For Google Drive thumbnails to appear publicly, make sure the uploaded image file can be viewed by anyone with the link.
-
-If a team submits more than once, the gallery keeps only the latest row for that team, using `Choose Your Team` as the team key and `Timestamp` to decide which submission is newest.
-
-If the Google Sheet is unavailable or has no project rows yet, the site falls back to `projects.csv`. Each fallback row supports:
-
-- `Team`
-- `Title`
-- `Project URL`
-- `Image URL`
-- `Description`
-
-The fallback gallery intentionally uses the same dummy image, placeholder titles and placeholder description. If a row has no image, the site uses the default placeholder image configured in `event-config.js`.
-
-You may also update:
-
-- event title and retreat name
-- project ideas
-- judging percentages
-- prize description
-- tool list
-- schedule timings
-
-## Run locally
-
-Double-click `index.html`, or run a local server:
+## Local development
 
 ```bash
-python -m http.server 8000
+npm install
+npm run dev
 ```
 
-Then open `http://localhost:8000`.
+## Validation
 
-## Publish
-
-This site can be deployed directly to:
-
-- GitHub Pages
-- Netlify
-- Vercel
-- Cloudflare Pages
-- any ordinary web server
-
-No build step or backend is required.
+```bash
+npm test
+```
